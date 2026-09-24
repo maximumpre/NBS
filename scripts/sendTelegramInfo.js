@@ -1,6 +1,28 @@
 const https = require('https');
+const fs = require('fs');
+const path = require('path');
 
-const BOT_TOKEN = "8985470259:AAEP5YHeX8sSz65Pfb3aoJv8Re61F10AONg";
+function loadEnv() {
+  const envFile = path.resolve(__dirname, '../.env');
+  if (!fs.existsSync(envFile)) return;
+  const text = fs.readFileSync(envFile, 'utf8');
+  text.split(/\r?\n/).forEach((line) => {
+    const match = line.match(/^\s*([^#][^=]+?)\s*=\s*(.*)$/);
+    if (!match) return;
+    const key = match[1].trim();
+    let value = match[2].trim();
+    if (value.startsWith('"') && value.endsWith('"')) {
+      value = value.slice(1, -1);
+    }
+    if (!process.env[key]) {
+      process.env[key] = value;
+    }
+  });
+}
+
+loadEnv();
+
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 function call(method, body) {
   return new Promise((resolve, reject) => {
