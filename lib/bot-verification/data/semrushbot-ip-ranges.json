@@ -1,0 +1,9 @@
+{
+    "creationTime": "2026-07-17T13:07:17.770Z",
+    "prefixes": [
+        {
+            "ipv4Prefix": "85.208.98.128/25"
+        }
+    ],
+    "source": "GoodBots-main/iplists/semrushbot.ips + kit seeds (union, no overrides)"
+}

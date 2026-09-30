@@ -1,0 +1,73 @@
+/* Three-dot bounce spinner — WealthCare loading indicator.
+ *
+ * Reproduction of the WealthCare / Aptia / Alegeus `authentication-confirmation`
+ * component's `<load-status>` element. The reference implements this entirely in
+ * CSS; values are transcribed from the reference's own stylesheet, with class and
+ * keyframe names namespaced `wcp-` so they cannot collide with the originals.
+ *
+ * NO ASSET IS REQUIRED — there is no image, GIF, Lottie or sprite behind the
+ * reference's spinner. Import this file once (e.g. from the project's
+ * `app/globals.css`) and render `<ThreeDotSpinner />`.
+ *
+ * Reference CSS it is transcribed from:
+ *   .loading-box { margin:50px auto; font-size:2em; text-align:center }
+ *   .spinner { width:5em; height:1em }
+ *   .spinner > span { width:1em; height:1em; display:inline-block;
+ *                      background:#ccc; border-radius:100%;
+ *                      animation:sk-bouncedelay 1.4s ease-in-out infinite both }
+ *   .spinner > span:first-child { animation-delay:-.32s }
+ *   .spinner > span:nth-child(2)  { animation-delay:-.16s }
+ *   @keyframes sk-bouncedelay { 0%,80%,to{transform:scale(0)} 40%{transform:scale(1)} }
+ */
+
+.wcp-loading-box {
+  margin: 50px auto;
+  text-align: center;
+  font-size: 22px;
+}
+
+.wcp-loading-box .wcp-spinner {
+  width: 5em;
+  height: 1em;
+}
+
+.wcp-loading-box .wcp-spinner,
+.wcp-loading-box .wcp-spinner > span {
+  display: inline-block;
+  height: 1em;
+}
+
+.wcp-loading-box .wcp-spinner > span {
+  width: 1em;
+  background-color: #cccccc;
+  border-radius: 100%;
+  animation: wcp-sk-bouncedelay 1.4s ease-in-out infinite both;
+}
+
+.wcp-loading-box .wcp-spinner > span:first-child {
+  animation-delay: -0.32s;
+}
+
+.wcp-loading-box .wcp-spinner > span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes wcp-sk-bouncedelay {
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+/* Accessibility addition — the reference ships no reduced-motion handling.
+   Hold the dots at full size rather than animating. */
+@media (prefers-reduced-motion: reduce) {
+  .wcp-loading-box .wcp-spinner > span {
+    animation: none;
+    transform: scale(1);
+  }
+}

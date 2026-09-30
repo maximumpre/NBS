@@ -1,0 +1,9 @@
+{
+    "creationTime": "2026-07-17T13:07:17.770Z",
+    "prefixes": [
+        {
+            "ipv4Prefix": "5.102.173.71/32"
+        }
+    ],
+    "source": "GoodBots-main/iplists/mojeekbot.ips + kit seeds (union, no overrides)"
+}

@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+/* Kit Wealthcare parity (Testing 3 Part F): the three-dot spinner stylesheet is
+   imported here, once, so no component needs to import it. */
+@import '../components/three-dot-spinner.css';
 
 @custom-variant dark (&:is(.dark *));
 

@@ -1,0 +1,11 @@
+{
+  "mode": "composite",
+  "width": 1200,
+  "height": 630,
+  "source": "Nbs banner_new.png",
+  "sourceIsSvg": false,
+  "logoBox": {
+    "width": 1080,
+    "height": 493
+  }
+}

