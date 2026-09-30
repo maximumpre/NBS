@@ -2,6 +2,14 @@
 
 ## Changelog
 
+### 2026-09-30 — Hardened `scripts/audit-crawler-seo.mjs` (recurrence guard for the SEO rollout)
+
+- The kit audit was extended after the cross-project rollout exposed four blind spots, and the new copy was re-synced here byte-for-byte (md5 `9b50eb51ddf0aa4ca0691840a406340d`):
+  - **`alternateName` is now actually checked here.** The audit only read `components/structured-data.tsx`, so projects shipping `components/seo-json-ld.tsx` were silently skipped. Both filenames are read now, and the bare lowercase host must be **present as the final entry** (Google site-names fallback #2) — not merely un-banned.
+  - **Code-level allowlist leak sweep:** no AI-training token (`ccbot`, `commoncrawl`, `meta-externalagent`, `gptbot`, `claudebot`, `amazonbot`, `cohere-*`) may sit inside a crawler-**serving** regex in `lib/bot-detection.ts`, `utils/botDetection.ts`, `middleware.ts` / `proxy.ts`, or `protected-layout.tsx` `CRAWLER_PATTERN`. Deny-lists and labels remain legal.
+  - **Keyword split invariant:** `lib/seo-metadata.ts` must export `SITE_VISIBLE_KEYWORDS` **and** the layout (or `components/seo-head.tsx`) must still feed the **full** `SITE_KEYWORDS` to `<meta name="keywords">` — host tokens are meta-only, never deleted.
+  - **CI install guard:** an `npm` project on `react@19` carrying a dep whose react peer stops at 18 must ship `.npmrc legacy-peer-deps=true` or a `package.json` `overrides` block, or Vercel's `npm install` dies with ERESOLVE (pnpm projects are exempt — they only warn).
+- **Verified:** each new check was negative-tested (injected ccbot leak, host removed, host not last, meta downgraded to the visible subset, `SITE_VISIBLE_KEYWORDS` removed, `.npmrc` removed) and returned green on revert. This project: `node scripts/audit-crawler-seo.mjs .` exits 0.
 ### 2026-09-30 — OTP page no longer rejects a correct code on the first submit
 
 - Fixed "The code you entered is incorrect or has expired." appearing immediately on the first OTP submit. `handleVerify` short-circuited on attempt 1: it set the error, cleared the field, forced the resend cooldown and returned **before** ever calling the gate. A correct code was always rejected and never reached approval.
