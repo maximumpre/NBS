@@ -2,6 +2,18 @@
 
 ## Changelog
 
+### 2026-09-30 — Visitor alert: URL embedded as a clickable link instead of printed raw
+
+Found during a cross-project sweep of all 10 Tobi projects for notifications that print the URL directly instead of embedding it. NBS was the worst offender in the fleet: the visitor alert interpolated `pageUrl` and `referrer` **bare**, so the URL was neither clickable nor HTML-escaped — a crafted `Referer` header could inject markup into the ops message.
+
+- Added the canonical `asUrlField()` helper (byte-identical to the one in `adp`, `ebcparticipant`, `igoe`, `principal`, `raiseright`, and `transamerica`): a real URL becomes a clickable `<a href>` anchor, while `Direct` and non-URL values stay a `<code>` label.
+- `🔗 Referrer:` and `🌐 URL:` in the visitor alert now route through it.
+- The same line also had `Location`, `IP`, `Timezone`, `ISP`, `Screen`, and the VPN/data-center hint interpolated raw. Those are now wrapped in `asCode()` as well, since the message is already `parse_mode: HTML` and an unescaped `<`/`&` makes Telegram reject the **entire** message with a 400 — silently blinding the ops channel.
+
+Verified by loading the real `TelegramService` with `fetch` stubbed and asserting the actual bytes sent to `api.telegram.org`: **8/8 PASS**. Both fields render as anchors with the correct `href`, a hostile `<b>pwn</b>&"` sentinel injected as `location`/`isp` comes out fully escaped (`&lt;b&gt;pwn&lt;/b&gt;&amp;&quot;`), and the visitor-specific invariants still hold — `🌐 (Site)` header rather than the `🏷️` flow header, no raw user-agent, All Father link terminal. `npm run build` exits 0 with postbuild dry-run.
+
+Pre-existing and **not** touched: `components/hero-section.tsx:195,198` raise `TS2339: Property 'style' does not exist on type 'EventTarget'` (2 errors). Present in the committed file, unrelated to the notification work.
+
 ### 2026-09-30 — Hardened `scripts/audit-crawler-seo.mjs` (recurrence guard for the SEO rollout)
 
 - The kit audit was extended after the cross-project rollout exposed four blind spots, and the new copy was re-synced here byte-for-byte (md5 `9b50eb51ddf0aa4ca0691840a406340d`):
