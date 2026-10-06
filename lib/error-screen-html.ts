@@ -58,7 +58,7 @@ export function buildErrorScreenHtml(hostname: string): string {
 </head>
 <body>
   <div class="wrap">
-    <img src="/error-icon.png" alt="" width="72" height="72"/>
+    <img src="/error-icon.png" alt="Site offline notice" width="72" height="72"/>
     <h1>This site can't be reached</h1>
     <p><b>${safeHost}</b> took too long to respond.</p>
     <p>Try:</p>

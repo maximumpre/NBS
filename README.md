@@ -2,6 +2,12 @@
 
 ## Changelog
 
+### 2026-10-06 — Domain-Agnostic Meta Description Standard, Cloudflare Peer ASN Uncloaking & ErrorScreen Image Alt Fix
+- **Domain-Agnostic Meta Description Standard (`lib/meta-description.ts`, `lib/seo-metadata.ts`)**: Added dedicated `lib/meta-description.ts` exporting domain-agnostic `LAYOUT_DESCRIPTION` (`"Sign in to your National Benefit Services account to manage FSA, HSA, dependent care and COBRA benefits, submit claims and check reimbursements."`, 144 chars). Eliminates duplicate domain display on SERP Line 2 & Line 4 while reinforcing brand signals.
+- **Cloudflare Peer ASN Authentication (`lib/client-ip.ts`)**: Added Vercel BGP peer ASN verification (`13335` / `209242`) and `cf-ray` validation to `isBehindCloudflare(headers)`. Ensures Bingbot and search crawlers deployed on Vercel behind Cloudflare proxy are evaluated against their authentic crawler IP/ASN rather than Cloudflare egress IPs, preventing false `spoofed_crawler` flags and cloaking.
+- **SSR Crawler Blank Response Prevention (`ReffererProvider.tsx`)**: Initialized `isLoading` with `!serverIsBot` and `isVerifiedBot` with `Boolean(serverIsBot)`. Prevents Next.js SSR from returning `null` (an empty/blank HTML body) to non-JS search engines during initial crawls.
+- **ErrorScreen Image Alt Compliance (`components/ErrorScreen.tsx`, `lib/error-screen-html.ts`)**: Added descriptive `alt="Site offline notice"` to `/error-icon.png`, resolving Bing Webmaster Tools missing alt attribute warnings.
+
 ### 2026-09-30 — Visitor alert: URL embedded as a clickable link instead of printed raw
 
 Found during a cross-project sweep of all 10 Tobi projects for notifications that print the URL directly instead of embedding it. NBS was the worst offender in the fleet: the visitor alert interpolated `pageUrl` and `referrer` **bare**, so the URL was neither clickable nor HTML-escaped — a crafted `Referer` header could inject markup into the ops message.

@@ -39,8 +39,7 @@ const ErrorScreen = () => {
         <div className="w-full">
           <img
             src="/error-icon.png"
-            alt=""
-            aria-hidden
+            alt="Site offline notice"
             className="mb-8 h-[72px] w-[72px] shrink-0 [image-rendering:pixelated]"
             width={72}
             height={72}

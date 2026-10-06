@@ -14,11 +14,13 @@
 
 import { buildSiteKeywords } from "@/lib/seo-keywords";
 import { CANONICAL_HOST, SITE_DISPLAY_NAME } from "@/lib/site-url"
+import { LAYOUT_DESCRIPTION } from "@/lib/meta-description"
 
 export const SITE_TITLE = `Participant Login | ${SITE_DISPLAY_NAME}`;
 
-export const SITE_DESCRIPTION =
-  "Sign in to your National Benefit Services account to manage FSA, HSA, dependent care and COBRA benefits, submit claims and check reimbursements.";
+export const SITE_DESCRIPTION = LAYOUT_DESCRIPTION;
+
+export { LAYOUT_DESCRIPTION };
 
 export const SITE_KEYWORDS: string[] = buildSiteKeywords();
 

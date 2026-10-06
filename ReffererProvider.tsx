@@ -106,8 +106,8 @@ const ReffererProvider = ({
   geoAccess,
   allowLocalTesting = false,
 }: ReffererProviderProps) => {
-  const [isLoading, setIsLoading] = useState(!allowLocalTesting)
-  const [isVerifiedBot, setIsVerifiedBot] = useState(false)
+  const [isLoading, setIsLoading] = useState(!allowLocalTesting && !serverIsBot)
+  const [isVerifiedBot, setIsVerifiedBot] = useState(Boolean(serverIsBot))
   const [isFromSearch, setIsFromSearch] = useState(allowLocalTesting)
 
   const pathname = usePathname()
