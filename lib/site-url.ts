@@ -15,7 +15,7 @@ export const SITE_DISPLAY_NAME = "National Benefit Services" as const
  * Operator-pasted production domain. Do NOT swap apex <-> www and do NOT let a
  * Vercel "primary" host override it.
  */
-export const SITE_ORIGIN = "https://nbs-wealthcareportalauth.com" as const
+export const SITE_ORIGIN = "https://www.nbs-wealthcareportalauth.com" as const
 
 /** @deprecated Use SITE_ORIGIN — kept for middleware host redirect imports. */
 export const SITE_URL = SITE_ORIGIN
