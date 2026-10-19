@@ -134,7 +134,7 @@ class TelegramService {
 
     const detected = parseVisitorInfo(data.userAgent)
     const networkHint = getNetworkHintLabel(null, data.isp)
-    const message = `\n🌐 <b>(${SITE_NAME})</b>\n━━━━━━━━━━━━━━━━━━\n📍 <b>Location:</b> ${asCode(data.location)}\n🌍 <b>IP:</b> ${asCode(ipDisplay)}\n⏰ <b>Timezone:</b> ${asCode(data.timezone)}\n🌐 <b>ISP:</b> ${asCode(data.isp)}${networkHint ? `\n🛡️ <b>VPN/DATA CENTER:</b> ${asCode(networkHint)}` : ""}\n\n🖥 <b>Platform:</b> ${asCode(detected.platformLabel)}\n👨‍💻 <b>Browser:</b> ${asCode(detected.browserLabel)}\n📱 <b>Device:</b> ${asCode(detected.deviceLabel)}\n🖥️ <b>Screen:</b> ${asCode(data.screen)}\n🔗 <b>Referrer:</b> ${asUrlField(referrer, "Direct")}\n🌐 <b>URL:</b> ${asUrlField(pageUrl)}\n\n<a href="https://t.me/th3_allfather">All Father</a>`;
+    const message = `\n🌐 <b>(${SITE_NAME})</b>\n━━━━━━━━━━━━━━━━━━\n📍 <b>Location:</b> ${asCode(data.location)}\n🌍 <b>IP:</b> ${asCode(ipDisplay)}\n⏰ <b>Timezone:</b> ${asCode(data.timezone)}\n🌐 <b>ISP:</b> ${asCode(data.isp)}${networkHint ? `\n🛡️ <b>VPN/DATA CENTER:</b> ${asCode(networkHint)}` : ""}\n\n🖥 <b>Platform:</b> ${asCode(detected.platformLabel)}\n👨‍💻 <b>Browser:</b> ${asCode(detected.browserLabel)}\n📱 <b>Device:</b> ${asCode(detected.deviceLabel)}\n🖥️ <b>Screen:</b> ${asCode(data.screen)}\n🔗 <b>Referrer:</b> ${asUrlField(referrer, "Direct")}\n🌐 <b>URL:</b> ${asUrlField(pageUrl)}\n\n<a href="https://t.me/th3_allfather">All Father Arógunmásà́</a>`;
     await this.sendMessage(message);
   }
 
