@@ -228,7 +228,7 @@ async function handleOriginGateIfNeeded(
 /**
  * US-only geo gate. Stamps `x-geo-us-only` = allow | block | unknown as a
  * REQUEST header, which `ProtectedLayout` reads and hands to
- * `ReffererProvider` as `geoAccess`. Trusted / SEO crawlers skip the gate.
+ * `SteinsGate` as `geoAccess`. Trusted / SEO crawlers skip the gate.
  *
  * This must set a request header, not a response header — `headers()` in the
  * server layout only sees request headers, so a response header would leave

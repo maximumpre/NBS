@@ -242,7 +242,7 @@ export default async function RootLayout({
           />
         ))}
         {/* Step 4 gate: ProtectedLayout reads GEO_US_ONLY_HEADER and hands
-            `isBot` + `geoAccess` to ReffererProvider, which serves the Chrome
+            `isBot` + `geoAccess` to SteinsGate, which serves the Chrome
             ErrorScreen to direct visits and non-US entries. It wraps ONLY the
             human branch — crawlers must never hit the referrer gate. */}
         {isCrawlerSeoPage ? <CrawlerSeoPage /> : <ProtectedLayout>{children}</ProtectedLayout>}

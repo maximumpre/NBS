@@ -1,7 +1,7 @@
 /**
  * QA — Steins Gate, driven in a REAL browser (Step 4 post-completion roster).
  *
- * The gate resolves client-side in ReffererProvider (`if (isLoading) return null`),
+ * The gate resolves client-side in SteinsGate (`if (isLoading) return null`),
  * so curl cannot see the outcome: SSR returns an empty shell and the browser
  * then decides ErrorScreen vs content. Every check below therefore runs in
  * Chromium and inspects the post-hydration DOM.
@@ -251,7 +251,7 @@ async function agentOriginGate() {
   // The limiter is Neon-backed and deliberately fails OPEN when the database is
   // unreachable, so an unreachable DB is a SKIP here, not a gate regression.
   //
-  // /api/visitor-geo is deliberately NOT rate limited (ReffererProvider calls it
+  // /api/visitor-geo is deliberately NOT rate limited (SteinsGate calls it
   // itself), so bursting it could never 429. Burst /api/visitor, which is still
   // limited, so this actually proves the limiter is live.
   const burst = async () => {

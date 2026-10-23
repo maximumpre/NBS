@@ -204,7 +204,7 @@ export function shouldRateLimitPath(pathname: string): boolean {
   // same reason as /api/telegram: it is a high-frequency internal endpoint, not
   // a scraping surface. Verified: 8 rapid polls stay 404/200, never 429.
   if (pathname.startsWith("/api/pending-login")) return false
-  // `ReffererProvider` calls /api/visitor-geo itself whenever the edge geo
+  // `SteinsGate` calls /api/visitor-geo itself whenever the edge geo
   // header is absent (geoAccess === "unknown"), so this is a first-party
   // dependency of the gate, not a scraping surface. Rate-limiting it means the
   // gate throttles its own lookup and the provider never resolves. On Vercel

@@ -62,15 +62,15 @@ if (!mw) {
   }
 }
 
-const rp = readIfExists(["ReffererProvider.tsx", "src/ReffererProvider.tsx"])
+const rp = readIfExists(["SteinsGate.tsx", "src/SteinsGate.tsx"])
 if (!rp) {
-  failures.push("missing ReffererProvider.tsx")
+  failures.push("missing SteinsGate.tsx")
 } else {
   if (/ACCESS_GRANTED_SESSION_KEY\s*=\s*["']\{your_project\}_referrer_access_granted["']/.test(rp.text)) {
-    failures.push("ReffererProvider still uses placeholder session key")
+    failures.push("SteinsGate still uses placeholder session key")
   }
   if (!rp.text.includes('geoAccess ?? "unknown"')) {
-    failures.push("ReffererProvider missing geoAccess ?? \"unknown\" fallback")
+    failures.push("SteinsGate missing geoAccess ?? \"unknown\" fallback")
   }
 }
 
