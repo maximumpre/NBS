@@ -2,6 +2,14 @@
 
 ## Changelog
 
+### 2026-10-25 — FCrDNS / Bing ASN official verify
+
+- **Completed:** Ported Ameriprise Google/Bing official verify into `isOfficialSearchCrawlerIp`: `GOOGLE_ASNS`, Bing corp ASN fast-pass (`AS8068`/`AS8069`/`AS3598`/`AS12076`), CIDR, then `verifyDnsBot` FCrDNS (`.googlebot.com` / `.search.msn.com`). Azure `AS8075` no longer free-passes. Homepage fail-open kept as safety net.
+- **Files affected:** `lib/bot-verification/origin-request-gate.ts` (or `src/lib/...`), `README.md` (and `dns-verify.ts` where copied).
+- **Verification:** Fleet re-scan RICH=200 THIN=0 PARTIAL=0; local gate still allow on `/` for spoofed Bingbot.
+- **Outcome:** Real Bing/Google more often classified official behind CF; spoof still cloaked off homepage.
+
+
 ### 2026-10-25 — Homepage search-crawler fail-open (Bing ErrorScreen)
 
 - **Completed:** Unverified Google/Bing UA on `/` or `/crawler-seo.html` now returns `allow` (crawler twin) instead of hard-cloak `spoofed_crawler` → ErrorScreen + `X-Robots-Tag: noindex`. Sensitive paths still cloak.
