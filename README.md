@@ -2,6 +2,14 @@
 
 ## Changelog
 
+### 2026-10-25 — Homepage search-crawler fail-open (Bing ErrorScreen)
+
+- **Completed:** Unverified Google/Bing UA on `/` or `/crawler-seo.html` now returns `allow` (crawler twin) instead of hard-cloak `spoofed_crawler` → ErrorScreen + `X-Robots-Tag: noindex`. Sensitive paths still cloak.
+- **Files affected:** `lib/bot-verification/origin-request-gate.ts` (or `src/lib/...`), `README.md`.
+- **Verification:** In-scope fleet re-scan: fail-open present; local gate allow on `/` for spoofed Bingbot UA.
+- **Outcome:** Homepage Bing/Google indexing no longer dies on IP/DoH miss behind CF.
+
+
 ### 2026-10-06 — Align Canonical Origin with Vercel Primary Host (HTTP 200)
 - **Vercel Primary Domain Alignment (`lib/site-url.ts`)**: Updated `SITE_ORIGIN` to `https://www.nbs-wealthcareportalauth.com`, matching the live Vercel Primary Host that serves HTTP 200. Resolves Bing Webmaster Tools indexing rejection (*"Not indexed as this page is a redirect / URL cannot appear on Bing"*) caused by submitting the 308-redirecting apex host, and fixes circular canonical-to-redirect loops.
 - **Prebuild Build Gate (`package.json`)**: Wired `prebuild` script running all 5 offline checks (`audit-crawler-seo.mjs`, `check-indexnow-key.mjs`, `check-brand-assets.mjs`, `check-meta-description.mjs`, `check-canonical-domain.mjs`).

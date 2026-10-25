@@ -239,6 +239,12 @@ export async function evaluateOriginRequestGate(
   if (claimsSearchCrawler(ua)) {
     const official = await isOfficialSearchCrawlerIp(ip, ua, request)
     if (!official) {
+      // Search crawler on "/" or crawler twin: fail-open to the crawler SEO twin (HTTP 200, indexable).
+      // NEVER emit X-Robots-Tag: noindex to Googlebot/Bingbot on homepage due to IP/DoH timeout.
+      // Fake crawlers on sensitive paths (/api, /verify-*) are still strictly cloaked.
+      if (pathname === "/" || pathname === "/crawler-seo.html") {
+        return { action: "allow" }
+      }
       return { action: "cloak", reason: "spoofed_crawler" }
     }
     // Verified search / AI crawler — skip hosting ASN cloak and path rate-limit.
