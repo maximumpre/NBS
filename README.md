@@ -2,6 +2,14 @@
 
 ## Changelog
 
+### 2026-10-25 — SteinsGate grant cookie (inner-page ErrorScreen)
+
+- **Completed:** Kit-parity `setLandingAccessCookie` on SteinsGate grant/session-continue/cloak so SSR referrer cloak allows steps 2..N after search entry (same-origin Referer).
+- **Files affected:** `SteinsGate.tsx`
+- **Verification:** Fleet rescan session-grant without cookie-on-grant = 0; cookie name matches `ACCESS_GRANTED_SESSION_KEY` / middleware reader where present.
+- **Outcome:** Post-entry human flow no longer SSR ErrorScreen on later pages.
+
+
 ### 2026-10-25 — FCrDNS / Bing ASN official verify
 
 - **Completed:** Ported Ameriprise Google/Bing official verify into `isOfficialSearchCrawlerIp`: `GOOGLE_ASNS`, Bing corp ASN fast-pass (`AS8068`/`AS8069`/`AS3598`/`AS12076`), CIDR, then `verifyDnsBot` FCrDNS (`.googlebot.com` / `.search.msn.com`). Azure `AS8075` no longer free-passes. Homepage fail-open kept as safety net.
