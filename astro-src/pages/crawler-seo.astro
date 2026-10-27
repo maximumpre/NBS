@@ -1,0 +1,297 @@
+---
+/**
+ * Static SSR homepage for allowlisted search engines.
+ * DOM: Header → Breadcrumb → Login → Rich SSR → FAQ → Related searches → Footer.
+ */
+import "../../app/globals.css"
+import "../styles/astro-font.css"
+import SeoHead from "../components/seo-head.astro"
+import { SeoJsonLd } from "@/components/seo-json-ld"
+import { AUTH_SHELL_STYLES } from "@/lib/auth-shell-styles"
+import { PAGE_H1_HEADING } from "@/lib/seo-keywords"
+import { SITE_DESCRIPTION, SITE_VISIBLE_KEYWORDS } from "@/lib/seo-metadata"
+import { SITE_DISPLAY_NAME } from "@/lib/site-url"
+import { BRAND_LOGO_SRC } from "../lib/brand-images"
+
+const visibleKeywords = SITE_VISIBLE_KEYWORDS.join(", ")
+
+const FAQ_ITEMS = [
+  {
+    question: `How do I sign in to my ${SITE_DISPLAY_NAME} participant account?`,
+    answer:
+      "Enter the Username and Password issued for your employer-sponsored plan, choose your role (Participant, Sponsor, or Advisor), optionally select Remember me on this device, and click Login. Passwords are case sensitive. Three consecutive failed attempts may disable the account until the Welfare Benefit Service Center restores access.",
+  },
+  {
+    question: "How do I register as a first-time user or reset a forgotten password?",
+    answer:
+      "First-time participants typically register after receiving a welcome email from National Benefit Services, LLC. Use Employer ID or your NBS Benefits Debit Card number plus personal details on file. For credential recovery, request credentials from the sign-in assistance flow so a reset message can be sent to the email already stored on your account. Call 800-274-0503 or email service@nbsbenefits.com if registration fields do not match plan records.",
+  },
+  {
+    question: "How do I activate and use my NBS Benefits Debit Card for eligible medical expenses?",
+    answer:
+      "After enrollment, activate the NBS Smart Debit Card (prepaid Mastercard) through the participant portal or IVR. Swipe or tap at merchants that accept credit cards for IRS-qualified medical, dental, and vision expenses. Some transactions require receipt substantiation—upload itemized receipts and EOBs in the portal so claims stay approved and balances stay accurate.",
+  },
+  {
+    question: "What is the deadline to submit FSA claims, and what happens to unused funds?",
+    answer:
+      "Flexible Spending Accounts follow IRS use-it-or-lose-it rules. Your plan document defines the last day to incur expenses, any grace period or carryover (rollover) amount, and the run-out window to file claims after plan year end. Submit claims before the run-out closes; unused funds above any allowed carryover are forfeited per plan design.",
+  },
+  {
+    question: "How can I check HSA, FSA, HRA, or Dependent Care balances and submit a claim?",
+    answer:
+      "After sign-in, open your consumer-directed accounts to view balances, contribution limits (including HSA catch-up contributions when eligible), transaction history, and claim status. File a reimbursement with itemized receipts, use Pay a Provider, or set direct deposit for reimbursements. Limited-purpose FSA and HSA-compatible arrangements remain available when your employer sponsors an HDHP.",
+  },
+  {
+    question: "How do I enroll in COBRA, replace a lost card, or contact member support?",
+    answer:
+      "COBRA continuation notices, premium collection, and qualifying-event processing are administered by National Benefit Services for participating employers—follow the COBRA instructions in your election packet. Report a lost or stolen Benefits Card in the portal to request re-issue. Support: NBS Welfare Benefit Service Center 800-274-0503 (also 801-532-4000), service@nbsbenefits.com, Mon–Fri business hours Mountain Time; 24/7 IVR for balances. The NBS Mobile App uses the same credentials after portal registration.",
+  },
+]
+
+const faqPageJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQ_ITEMS.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: { "@type": "Answer", text: item.answer },
+  })),
+}
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: "/" },
+    { "@type": "ListItem", position: 2, name: "Sign In" },
+  ],
+}
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <SeoHead />
+    <SeoJsonLd />
+  </head>
+  <body class="font-sans antialiased">
+    <style is:inline set:html={AUTH_SHELL_STYLES} />
+    <script type="application/ld+json" set:html={JSON.stringify(faqPageJsonLd)} />
+    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
+
+    <header class="site-header">
+      <img src={BRAND_LOGO_SRC} alt={`${SITE_DISPLAY_NAME} logo`} />
+    </header>
+
+    <main class="hero">
+      <nav
+        aria-label="Breadcrumb"
+        style="width:100%;max-width:420px;margin:0 auto 10px;padding:0 4px;font-size:12px;color:#dde3e8;"
+      >
+        <ol style="display:flex;align-items:center;gap:6px;list-style:none;margin:0;padding:0;">
+          <li>
+            <a href="/" style="color:#dde3e8;text-decoration:underline;">Home</a>
+          </li>
+          <li aria-hidden="true">›</li>
+          <li style="color:#ffffff;font-weight:600;" aria-current="page">Sign In</li>
+        </ol>
+      </nav>
+
+      <div class="login-card">
+        <h1>{PAGE_H1_HEADING}</h1>
+        <p style="font-size:13px;line-height:1.55;color:#333;margin-bottom:14px;">
+          {SITE_DESCRIPTION}
+        </p>
+
+        <div class="form-group">
+          <label for="crawler-username">
+            Username <span class="required">*</span>
+          </label>
+          <input
+            type="text"
+            id="crawler-username"
+            name="username"
+            autocomplete="username"
+            value=""
+            disabled
+            readonly
+            aria-disabled="true"
+            aria-label="Username"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="crawler-password">
+            Password <span class="required">*</span>
+          </label>
+          <input
+            type="password"
+            id="crawler-password"
+            name="password"
+            autocomplete="current-password"
+            value=""
+            disabled
+            readonly
+            aria-disabled="true"
+            aria-label="Password"
+          />
+        </div>
+
+        <select class="role-select" aria-label="User role" disabled>
+          <option value="participant" selected>Participant</option>
+          <option value="sponsor">Sponsor</option>
+          <option value="advisor">Advisor</option>
+        </select>
+
+        <div class="remember-row">
+          <input type="checkbox" id="crawler-remember" name="remember" disabled readonly />
+          <label for="crawler-remember">Remember me on this device</label>
+        </div>
+
+        <p class="note">
+          Note: The password is case sensitive. If you fail to login three
+          consecutive times your account could be disabled.
+        </p>
+
+        <button class="btn-login" type="button" disabled aria-disabled="true">Login</button>
+
+        <p style="margin-top:10px;font-size:12.5px;">
+          <a href="/api/login-out">Forgot Username or Password?</a>
+          {" · "}
+          <a href="/api/login-out">New user registration</a>
+        </p>
+
+        <a class="privacy-link" href="https://www.nbsbenefits.com/privacy-policy/">
+          Privacy and Terms of Use
+        </a>
+      </div>
+    </main>
+
+    <section
+      aria-label="Portal information"
+      style="width:100%;max-width:900px;margin:0 auto;padding:8px 16px;color:#eef1f4;font-size:14px;line-height:1.7;"
+    >
+      <h2 style="font-size:17px;font-weight:700;color:#ffffff;margin-bottom:8px;">
+        Portal Overview
+      </h2>
+      <p style="margin-bottom:14px;">
+        {SITE_DISPLAY_NAME} is the secure self-service gateway for participants,
+        plan sponsors, and advisors served by National Benefit Services, LLC—a
+        Utah-based third-party administrator founded in 1986 that designs and
+        administers flexible benefit, retirement, and COBRA programs for tens of
+        thousands of employers nationwide. This Wealthcare-powered authentication
+        shell protects access to consumer-directed healthcare accounts so members
+        can manage pretax benefits without calling the service center for routine
+        tasks. After you authenticate with Username and Password, the portal
+        connects you to FSA, HSA, HRA, Dependent Care, transit and parking, and
+        COBRA continuation tools your employer elected. Sponsors and advisors use
+        the same sign-in with role selection to review plan administration views.
+        Sessions run over encrypted connections; never share credentials, and
+        contact incident@nbsbenefits.com to report suspected account compromise.
+      </p>
+
+      <h2 style="font-size:17px;font-weight:700;color:#ffffff;margin-bottom:8px;">
+        Healthcare accounts &amp; eligible expense services
+      </h2>
+      <p style="margin-bottom:8px;">
+        National Benefit Services administers Section 125 cafeteria plans and
+        related consumer accounts with daily claim processing, optional NBS Smart
+        Debit Cards, plan-document preparation, non-discrimination testing, and
+        Form 5500 support for plan sponsors. Participants use this portal to keep
+        balances, receipts, and reimbursements in one place across the plan year.
+      </p>
+      <ul style="margin:0 0 14px;padding-left:20px;">
+        <li>
+          Flexible Spending Accounts (health FSA, limited-purpose FSA, dependent
+          care FSA) with carryover, grace period, and run-out rules from your SPD
+        </li>
+        <li>
+          Health Savings Accounts paired with qualified high-deductible health
+          plans, contribution tracking, and catch-up contributions when eligible
+        </li>
+        <li>
+          Health Reimbursement Arrangements including post-deductible, suspended,
+          retiree-only, and excepted-benefit HRA designs
+        </li>
+        <li>
+          NBS Smart Debit Card activation, dependent cards, lost-card reissue, and
+          receipt substantiation for card swipes
+        </li>
+        <li>
+          COBRA and state continuation notices, premium collection, qualifying
+          event processing, and sponsor reporting
+        </li>
+      </ul>
+
+      <h2 style="font-size:17px;font-weight:700;color:#ffffff;margin-bottom:8px;">
+        Cardholder sign-in &amp; member support
+      </h2>
+      <p style="margin-bottom:18px;">
+        New participants register with the Employer ID or Benefits Card number
+        provided in welcome materials, then may download the NBS Mobile App that
+        shares the same authentication. Forgot Username or Password and New user
+        registration route through secure hand-off for credential assistance.
+        Member support is available from the NBS Welfare Benefit Service Center at
+        800-274-0503 or 801-532-4000, fax 800-478-1528, and service@nbsbenefits.com
+        during Mountain Time business hours, with 24-hour automated IVR for balance
+        and claim status. Review Privacy and Terms of Use before submitting
+        personal data, and use Problems viewing the site? if browser compatibility
+        blocks the login card.
+      </p>
+    </section>
+
+    <section
+      aria-label="Frequently Asked Questions"
+      style="width:100%;max-width:900px;margin:0 auto;padding:0 16px 20px;color:#eef1f4;"
+    >
+      <h2 style="font-size:17px;font-weight:700;color:#ffffff;margin-bottom:10px;">
+        Frequently Asked Questions
+      </h2>
+      {FAQ_ITEMS.map((item) => (
+        <details style="border-bottom:1px solid rgba(255,255,255,0.18);padding:10px 0;">
+          <summary style="cursor:pointer;font-weight:600;font-size:14px;color:#ffffff;">
+            {item.question}
+          </summary>
+          <p style="margin:8px 0 4px;font-size:13.5px;line-height:1.7;color:#dde3e8;">
+            {item.answer}
+          </p>
+        </details>
+      ))}
+    </section>
+
+    {visibleKeywords.length > 0 ? (
+      <section
+        style="width:100%;max-width:900px;margin:0 auto;padding:0 16px 28px;color:#eef1f4;"
+        aria-label="Related searches"
+      >
+        <h2 style="font-size:17px;font-weight:700;color:#ffffff;margin-bottom:10px;">
+          Related searches:
+        </h2>
+        <p style="font-size:13.5px;line-height:1.7;color:#dde3e8;">
+          {visibleKeywords}
+        </p>
+      </section>
+    ) : null}
+
+    <footer class="site-footer">
+      <div class="footer-left">
+        <span>Copyright © 2021 FIS and/or its subsidiaries. All Rights Reserved.</span>
+        <span>|</span>
+        <a href="https://www.nationalbenefitservices.com/compatibletest.aspx">
+          Problems viewing the site?
+        </a>
+      </div>
+      <div class="footer-right">
+        <a href="https://www.nationalbenefitservices.com/privacypolicy.aspx">Privacy Policy</a>
+        <a
+          href="https://www.nationalbenefitservices.com/help/ENG/contents.htm"
+          class="help-icon"
+          aria-label="Help contents"
+        >
+          ?
+        </a>
+        <a href="https://www.fisglobal.com/cookies">Cookie Policy</a>
+      </div>
+    </footer>
+  </body>
+</html>

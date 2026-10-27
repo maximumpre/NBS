@@ -192,10 +192,10 @@ export function HeroSection({ visitorInfo }: HeroSectionProps) {
               maxWidth: "140px",
             }}
             onMouseOver={(e) => {
-              if (!isLoading) e.target.style.background = "#555";
+              if (!isLoading) e.currentTarget.style.background = "#555";
             }}
             onMouseOut={(e) => {
-              if (!isLoading) e.target.style.background = "#666";
+              if (!isLoading) e.currentTarget.style.background = "#666";
             }}
           >
             {isLoading ? "Loading..." : "login"}

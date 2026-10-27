@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
 import { notifyBotCrawlIfNeeded } from "@/lib/bot-verification/bot-crawl-middleware";
 import {
-  CRAWLER_SEO_PAGE_UA,
   SEARCH_CRAWLER_UA,
   DISCOVERY_CRAWLER_UA,
   isSocialPreviewCrawlerUA,
@@ -11,6 +10,11 @@ import { AI_REFERENCE_CRAWLER_UA } from "@/lib/ai-referral";
 import { isSeoCrawlerPath } from "@/lib/seo-crawler-paths";
 import { AI_TRAINING_CRAWLER_UA } from "@/lib/ai-referral";
 import { isLocalTestingUnlocked } from "@/lib/local-testing";
+import { isAllowedSearchOrBacklinkReferrer } from "@/lib/allowed-referrer";
+import { applyNavProofCookie } from "@/lib/bot-risk/proof-cookies";
+import { isCrawlerSeoPreviewUnlocked } from "@/lib/crawler-seo-preview";
+import { CRAWLER_PATTERN } from "@/lib/crawler-ua";
+import { LANDING_ACCESS_COOKIE } from "@/lib/landing-access-cookie";
 // Step 4 — Steins Gate.
 import { buildErrorScreenHtml } from "@/lib/error-screen-html";
 import { getRequestCountryCode } from "@/lib/edge-geo";
@@ -18,8 +22,17 @@ import { GEO_US_ONLY_HEADER } from "@/lib/geo-us-header";
 import { isDeniedBotUserAgent } from "@/lib/bot-verification/denied-bots";
 import { evaluateOriginRequestGate } from "@/lib/bot-verification/origin-request-gate";
 import { isUngatedSeoPath } from "@/lib/seo-public-paths";
-import { SITE_ORIGIN } from "@/lib/site-url";
+import { SITE_HOMEPAGE_CANONICAL, SITE_ORIGIN } from "@/lib/site-url";
 import { isTrustedCrawlerUserAgent } from "@/utils/botDetection";
+
+/** `/` is served by Astro. Both variants are pre-built into public/. */
+const ASTRO_LANDING_HTML = "/index.html";
+const ASTRO_CRAWLER_HTML = "/crawler-seo.html";
+/**
+ * Marker appended when the incoming pathname already equals the rewrite target
+ * (e.g. a direct GET of /index.html). Without it Next would see a self-rewrite loop.
+ */
+const ASTRO_VARIANT_MARKER = "astroVariant";
 
 const ALLOWED_BOT_PATTERNS = [
   /facebookexternalhit/i,
@@ -166,6 +179,7 @@ function isUngatedAssetPath(pathname: string): boolean {
     PUBLIC_BRAND_ASSETS.has(pathname) ||
     pathname === "/robots.txt" ||
     pathname === "/sitemap.xml" ||
+    pathname.startsWith("/_astro/") ||
     isUngatedSeoPath(pathname)
   );
 }
@@ -220,7 +234,7 @@ async function handleOriginGateIfNeeded(
 
   // Cloak, but still serve brand/SEO assets so the ErrorScreen's own icon loads.
   if (isUngatedAssetPath(request.nextUrl.pathname)) {
-    return nextWithHeaders(request);
+    return nextFromRequest(request);
   }
   return deniedBotErrorResponse(request);
 }
@@ -262,7 +276,8 @@ function handleGeoRegionRedirectIfNeeded(
   const requestHeaders = applySearchCrawlerHeaders(request);
   requestHeaders.set(GEO_US_ONLY_HEADER, value);
 
-  return NextResponse.next({ request: { headers: requestHeaders } });
+  // Must exit through nextWithHeaders so Astro `/` rewrite + landing stamps run.
+  return nextWithHeaders(requestHeaders, request);
 }
 
 /**
@@ -360,21 +375,97 @@ function applySearchCrawlerHeaders(request: NextRequest): Headers {
 }
 
 function nextWithHeaders(
-  request: NextRequest,
-  extra: Record<string, string> = {}
+  requestHeaders: Headers,
+  request?: NextRequest,
 ): NextResponse {
-  const pathname = request.nextUrl.pathname;
-  const response = NextResponse.next();
+  const pathname = requestHeaders.get("x-pathname") ?? request?.nextUrl.pathname ?? "";
+  const isCrawlerVariant =
+    requestHeaders.get("x-crawler-seo-page") === "1" || isCrawlerSeoPreviewUnlocked();
+  const isAstroLandingEntry =
+    pathname === "/" ||
+    pathname === ASTRO_LANDING_HTML ||
+    pathname === ASTRO_CRAWLER_HTML;
+  const wantsCrawlerVariant = isCrawlerVariant || pathname === ASTRO_CRAWLER_HTML;
+  const astroFile = wantsCrawlerVariant ? ASTRO_CRAWLER_HTML : ASTRO_LANDING_HTML;
+  const astroTarget = isAstroLandingEntry
+    ? pathname === astroFile
+      ? `${astroFile}?${ASTRO_VARIANT_MARKER}=1`
+      : astroFile
+    : null;
+
+  // SSR human cloak: no allowed Referer + no grant cookie → ErrorScreen.
+  if (
+    request &&
+    isAstroLandingEntry &&
+    !wantsCrawlerVariant &&
+    !isLocalTestingUnlocked()
+  ) {
+    const hasGrant = request.cookies.get(LANDING_ACCESS_COOKIE)?.value === "1";
+    const referer =
+      request.headers.get("referer") ?? request.headers.get("referrer") ?? "";
+    const pageOrigin = request.nextUrl.origin;
+    if (!hasGrant && !isAllowedSearchOrBacklinkReferrer(referer, pageOrigin)) {
+      return deniedBotErrorResponse(request);
+    }
+  }
+
+  const response =
+    astroTarget && request
+      ? NextResponse.rewrite(new URL(astroTarget, request.nextUrl))
+      : NextResponse.next({ request: { headers: requestHeaders } });
+
   response.headers.set("x-pathname", pathname);
-  for (const [key, value] of Object.entries(extra)) {
-    response.headers.set(key, value);
+
+  if (requestHeaders.get("x-crawler-seo-page") === "1" || wantsCrawlerVariant) {
+    response.headers.set("x-crawler-seo-page", "1");
+    response.headers.set(
+      "Link",
+      `<${SITE_HOMEPAGE_CANONICAL}>; rel="canonical"`,
+    );
+    response.cookies.set("x-crawler-seo-page", "1", {
+      httpOnly: true,
+      path: "/",
+      maxAge: 60,
+      sameSite: "lax",
+    });
+  }
+
+  if (isAstroLandingEntry) {
+    const userAgent = requestHeaders.get("user-agent") ?? "";
+    response.cookies.set("landing_bot", CRAWLER_PATTERN.test(userAgent) ? "1" : "0", {
+      httpOnly: false,
+      path: "/",
+      maxAge: 60,
+      sameSite: "lax",
+    });
+    response.cookies.set(
+      "landing_geo",
+      requestHeaders.get(GEO_US_ONLY_HEADER) ?? "unknown",
+      { httpOnly: false, path: "/", maxAge: 60, sameSite: "lax" },
+    );
+    response.cookies.set(
+      "landing_local_testing",
+      isLocalTestingUnlocked() ? "1" : "0",
+      { httpOnly: false, path: "/", maxAge: 60, sameSite: "lax" },
+    );
+  }
+
+  if (!pathname.startsWith("/api") && !pathname.startsWith("/_next")) {
+    applyNavProofCookie(response, request);
   }
   return response;
 }
 
-function attachCrawlerSeoCookie(response: NextResponse): NextResponse {
-  response.cookies.set("x-crawler-seo-page", "1", { path: "/" });
-  return response;
+/** Convenience: clone request headers (via applySearchCrawlerHeaders) then exit. */
+function nextFromRequest(
+  request: NextRequest,
+  extra: Record<string, string> = {},
+): NextResponse {
+  const requestHeaders = applySearchCrawlerHeaders(request);
+  for (const [key, value] of Object.entries(extra)) {
+    requestHeaders.set(key, value);
+  }
+  return nextWithHeaders(requestHeaders, request);
 }
 
 export async function middleware(request: NextRequest, event: NextFetchEvent) {
@@ -401,7 +492,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     pathname.startsWith("/_next") ||
     isUngatedAssetPath(pathname)
   ) {
-    return nextWithHeaders(request);
+    return nextFromRequest(request);
   }
 
   /* Step 4 Sector D — non-allowlisted automation on an HTML document gets the
@@ -422,18 +513,18 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
   // training tokens appear inside broader patterns). They are `Disallow: /` in
   // robots.txt, so serving them the twin would contradict our own crawl policy.
   if (
-    isSeoCrawlerPath(pathname) &&
+    (isSeoCrawlerPath(pathname) ||
+      pathname === ASTRO_LANDING_HTML ||
+      pathname === ASTRO_CRAWLER_HTML) &&
     isCrawlerSeoPageUserAgent(userAgent) &&
     !/applebot-extended/i.test(userAgent)
   ) {
-    return attachCrawlerSeoCookie(
-      nextWithHeaders(request, { "x-crawler-seo-page": "1" })
-    );
+    return nextFromRequest(request, { "x-crawler-seo-page": "1" });
   }
 
   if (process.env.NODE_ENV !== "production") {
     const ua = userAgent;
-    if (isAllowedBot(ua)) return nextWithHeaders(request);
+    if (isAllowedBot(ua)) return nextFromRequest(request);
     if (isBlockedBot(ua))
       return NextResponse.redirect(new URL("/blocked", request.url));
   }
@@ -499,13 +590,13 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
   }
 
   /* Step 4 US-only geo gate — last, after every flow/crawler gate. */
-  return handleGeoRegionRedirectIfNeeded(request) ?? nextWithHeaders(request);
+  return handleGeoRegionRedirectIfNeeded(request) ?? nextFromRequest(request);
 }
 
 export const config = {
   matcher: [
     // Brand assets + crawler endpoints are public and must bypass the flow gates.
-    // Only paths that actually exist on disk are whitelisted here.
-    "/((?!_next/static|_next/image|favicon.ico|favicon-32x32.png|favicon.png|icon-32x32.png|icon-48x48.png|apple-touch-icon.png|og-image.png|og-image.meta.json|error-icon.png|robots.txt|sitemap.xml).*)",
+    // Do NOT exclude index.html / crawler-seo.html — they are gated landing entries.
+    "/((?!_next/static|_next/image|favicon.ico|favicon-32x32.png|favicon.png|icon-32x32.png|icon-48x48.png|apple-touch-icon.png|og-image.png|og-image.meta.json|error-icon.png|robots.txt|sitemap.xml|_astro/).*)",
   ],
 };

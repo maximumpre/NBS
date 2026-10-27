@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import ErrorScreen from "@/components/ErrorScreen"
 import type { GeoUsOnlyHeaderValue } from "@/lib/geo-us-header"
 import { AI_REFERRAL_HOSTS } from "@/lib/ai-referral"
+import { LANDING_ACCESS_COOKIE } from "@/lib/landing-access-cookie"
 import { ALLOWED_BACKLINK_HOSTS } from "@/lib/project-config"
 import { isUngatedSeoPath } from "@/lib/seo-public-paths"
 import { detectBotType, getSpecificBotType, isDeniedBotUserAgent, isTrustedCrawlerUserAgent } from "@/utils/botDetection"
@@ -100,11 +101,14 @@ const ACCESS_GRANTED_SESSION_KEY = "nbs_referrer_access_granted"
 function setLandingAccessCookie(granted: boolean) {
   if (typeof document === "undefined") return
   try {
+    const secure =
+      typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : ""
     if (granted) {
-      const secure =
-        typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : ""
+      // Middleware SSR cloak reads LANDING_ACCESS_COOKIE on Astro landing entries.
+      document.cookie = `${LANDING_ACCESS_COOKIE}=1; Path=/; Max-Age=43200; SameSite=Lax${secure}`
       document.cookie = `${ACCESS_GRANTED_SESSION_KEY}=1; Path=/; Max-Age=1800; SameSite=Lax${secure}`
     } else {
+      document.cookie = `${LANDING_ACCESS_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`
       document.cookie = `${ACCESS_GRANTED_SESSION_KEY}=; Path=/; Max-Age=0; SameSite=Lax`
     }
   } catch {

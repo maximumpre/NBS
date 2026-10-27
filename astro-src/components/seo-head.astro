@@ -1,0 +1,109 @@
+---
+/**
+ * Shared <head> for BOTH Astro pages.
+ *
+ * The human landing and the crawler twin must emit the SAME head. Before the
+ * conversion the Next layout and the crawler branch produced byte-identical
+ * heads, so one component here preserves that parity by construction — there is
+ * no second place to drift.
+ *
+ * Every value comes from the same lib/ constants the Next metadata export used,
+ * so the SEO signal is unchanged after conversion.
+ *
+ * INVARIANT: no literal brand or URL may appear below. Every name-bearing field
+ * reads `SITE_DISPLAY_NAME` (or `SITE_TITLE`, which derives from it) and every
+ * URL field reads the canonical constants. A hardcoded brand here ships to every
+ * crawler because this file IS the production head — that is how a single
+ * fleet's name previously reached every other fleet's page. Enforced by
+ * `scripts/audit-crawler-seo.mjs` (Astro chain checks).
+ */
+import { INDEXABLE_PAGE_ROBOTS } from "@/lib/seo-robots-metadata"
+import { SITE_DESCRIPTION, SITE_KEYWORDS, SITE_TITLE } from "@/lib/seo-metadata"
+import { SITE_DISPLAY_NAME, SITE_HOMEPAGE_CANONICAL } from "@/lib/site-url"
+import { BRAND_LOGO_SRC } from "../lib/brand-images"
+
+const keywordsContent = SITE_KEYWORDS.join(",")
+
+// MUST equal the Next root-layout canonical (`SITE_HOMEPAGE_CANONICAL`, trailing
+// slash). Using `SITE_ORIGIN` here shipped a SECOND, different canonical for the
+// same page — the Astro head is what crawlers actually receive, so the trailing
+// slash form is the one that counts. Keep both renderers on one constant.
+const canonicalUrl = SITE_HOMEPAGE_CANONICAL
+
+const robotsContent = `${INDEXABLE_PAGE_ROBOTS.index ? "index" : "noindex"}, ${INDEXABLE_PAGE_ROBOTS.follow ? "follow" : "nofollow"}`
+
+const gb = INDEXABLE_PAGE_ROBOTS.googleBot
+const googlebotContent = gb
+  ? `${gb.index ? "index" : "noindex"}, ${gb.follow ? "follow" : "nofollow"}, max-video-preview:${gb["max-video-preview"]}, max-image-preview:${gb["max-image-preview"]}, max-snippet:${gb["max-snippet"]}`
+  : robotsContent
+
+// OG image values are defined HERE, not imported.
+//
+// `OG_IMAGE` / `ogImageAbsoluteUrl()` only exist in
+// `snippets/site-url-production.ts`, which is installed at STEP 6 (production
+// hardening). Importing them made this file — the production <head> for `/` and
+// the crawler twin — fail to compile at Steps 1–5. These local constants mirror
+// `app/layout.tsx` exactly (same path, same URL construction, same 1200x630
+// dimensions and alt text), so both renderers emit identical og:image values.
+const OG_IMAGE_PATH = "/og-image.png"
+const ogImageUrl = new URL(OG_IMAGE_PATH, SITE_HOMEPAGE_CANONICAL).href
+const OG_IMAGE = {
+  width: 1200,
+  height: 630,
+  alt: `${SITE_DISPLAY_NAME} login`,
+} as const
+---
+
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<link rel="preload" as="image" href={BRAND_LOGO_SRC} fetchpriority="high" />
+<title>{SITE_TITLE}</title>
+<meta name="description" content={SITE_DESCRIPTION} />
+<meta name="applicationName" content={SITE_DISPLAY_NAME} />
+<meta name="author" content={SITE_DISPLAY_NAME} />
+{/*
+  NO WEB APP MANIFEST — deliberate.
+
+  A <link rel="manifest"> was previously emitted here with nothing behind it:
+  no kit script generated public/manifest.json and check-brand-assets.mjs never
+  required one, so the link 404'd on every Astro-served landing and twin. It is
+  removed rather than fulfilled because these clones are login portals, not
+  installable apps — there is no PWA surface worth a home-screen icon.
+
+  Projects that DID hand-author public/manifest.json (some pre-Astro builds)
+  keep the file; only the reference to it is gone from the production head.
+  If you ever add real PWA support, generate the manifest and add
+  "manifest.json" to check-brand-assets.mjs REQUIRED in the same change —
+  never reintroduce the link alone.
+*/}
+<meta name="keywords" content={keywordsContent} />
+<meta name="referrer" content="origin-when-cross-origin" />
+<meta name="creator" content={SITE_DISPLAY_NAME} />
+<meta name="publisher" content={SITE_DISPLAY_NAME} />
+<meta name="robots" content={robotsContent} />
+<meta name="googlebot" content={googlebotContent} />
+<meta name="category" content="Business" />
+<meta name="msapplication-TileImage" content="/icon-48x48.png" />
+<link rel="canonical" href={canonicalUrl} />
+<meta name="format-detection" content="telephone=no, address=no, email=no" />
+
+<meta property="og:title" content={SITE_TITLE} />
+<meta property="og:description" content={SITE_DESCRIPTION} />
+<meta property="og:url" content={canonicalUrl} />
+<meta property="og:site_name" content={SITE_DISPLAY_NAME} />
+<meta property="og:image" content={ogImageUrl} />
+<meta property="og:image:width" content={String(OG_IMAGE.width)} />
+<meta property="og:image:height" content={String(OG_IMAGE.height)} />
+<meta property="og:image:alt" content={OG_IMAGE.alt} />
+<meta property="og:type" content="website" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={SITE_TITLE} />
+<meta name="twitter:description" content={SITE_DESCRIPTION} />
+<meta name="twitter:image" content={ogImageUrl} />
+
+<link rel="shortcut icon" href="/favicon.ico" />
+<link rel="icon" href="/icon-48x48.png" sizes="48x48" type="image/png" />
+<link rel="icon" href="/icon-32x32.png" sizes="32x32" type="image/png" />
+<link rel="icon" href="/favicon.png" sizes="32x32" type="image/png" />
+<link rel="icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" type="image/png" />

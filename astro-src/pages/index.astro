@@ -1,0 +1,32 @@
+---
+/**
+ * Human landing at `/`. Astro owns the document; one React island owns the login tree.
+ * Middleware rewrites `/` → `public/index.html` after origin → bot → risk → geo gates.
+ */
+import "../../app/globals.css"
+import "../styles/astro-font.css"
+import "../components/error-screen.css"
+import SeoHead from "../components/seo-head.astro"
+import { SeoJsonLd } from "@/components/seo-json-ld"
+import NbsLandingIsland from "../components/nbs-landing-island.tsx"
+import { HERO_IMAGE_SRC as heroImage } from "../lib/brand-images"
+
+export const viewport = { width: "device-width", initialScale: 1 }
+
+const allowLocalTestingEnv = ["1", "true", "yes"].includes(
+  (import.meta.env.ALLOW_LOCAL_TESTING ?? "").trim().toLowerCase(),
+)
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <SeoHead />
+    <SeoJsonLd />
+    <link rel="preload" as="image" href={heroImage} />
+  </head>
+  <body class="font-sans antialiased">
+    <NbsLandingIsland client:only="react" allowLocalTestingEnv={allowLocalTestingEnv} />
+    <script src="/_vercel/insights/script.js" is:inline defer></script>
+  </body>
+</html>

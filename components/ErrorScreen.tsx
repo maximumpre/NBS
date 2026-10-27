@@ -1,10 +1,20 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import "./error-screen.css"
 
-const ErrorScreen = () => {
-  const [siteName, setSiteName] = useState("")
+interface ErrorScreenProps {
+  initialHostname?: string
+  errorCode?: string
+}
+
+const ErrorScreen = ({
+  initialHostname = "",
+  errorCode = "ERR_CONNECTION_REFUSED",
+}: ErrorScreenProps) => {
+  const [siteName, setSiteName] = useState(initialHostname)
   const [checkNetworkOpen, setCheckNetworkOpen] = useState(false)
+  const [platform, setPlatform] = useState<"win" | "mac" | "mobile" | "other">("other")
 
   const handleToggleCheckNetwork = () => {
     setCheckNetworkOpen((prev) => !prev)
@@ -18,99 +28,181 @@ const ErrorScreen = () => {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setSiteName(window.location.hostname)
+      const hostname = window.location.hostname
+      setSiteName(hostname)
+
+      const prevTitle = document.title
+      if (hostname) {
+        document.title = hostname
+      }
+
+      // Authentic Chrome auto-reload when network reconnects
+      const handleOnline = () => {
+        window.location.reload()
+      }
+      window.addEventListener("online", handleOnline)
+
+      const ua = navigator.userAgent || ""
+      const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua)
+      if (isMobile) {
+        setPlatform("mobile")
+      } else if (/Windows/i.test(ua)) {
+        setPlatform("win")
+      } else if (/Macintosh|Mac OS X/i.test(ua)) {
+        setPlatform("mac")
+      } else {
+        setPlatform("other")
+      }
+
+      const prevBodyBg = document.body.style.backgroundColor
+      document.body.style.backgroundColor = "#202124"
+
+      let metaTheme = document.querySelector('meta[name="theme-color"]')
+      let createdMeta = false
+      const prevThemeContent = metaTheme?.getAttribute("content") || null
+      if (!metaTheme) {
+        metaTheme = document.createElement("meta")
+        metaTheme.setAttribute("name", "theme-color")
+        document.head.appendChild(metaTheme)
+        createdMeta = true
+      }
+      metaTheme.setAttribute("content", "#202124")
+
+      // Hide site favicon while locked (real Chrome neterror shows no brand icon)
+      const iconSelector =
+        'link[rel~="icon"], link[rel~="shortcut icon"], link[rel~="apple-touch-icon"], link[rel~="apple-touch-icon-precomposed"], link[rel="mask-icon"]'
+      const prevIcons = Array.from(document.querySelectorAll(iconSelector)).map((el) => {
+        const parent = el.parentNode
+        parent?.removeChild(el)
+        return { el, parent }
+      })
+      const tileMeta = document.querySelector('meta[name="msapplication-TileImage"]')
+      const prevTileContent = tileMeta?.getAttribute("content") ?? null
+      if (tileMeta) {
+        tileMeta.setAttribute("content", "data:,")
+      }
+      const blankIcon = document.createElement("link")
+      blankIcon.setAttribute("rel", "icon")
+      blankIcon.setAttribute("href", "data:,")
+      document.head.appendChild(blankIcon)
+
+      return () => {
+        window.removeEventListener("online", handleOnline)
+        if (prevTitle) {
+          document.title = prevTitle
+        }
+        document.body.style.backgroundColor = prevBodyBg
+        if (createdMeta && metaTheme?.parentNode) {
+          metaTheme.parentNode.removeChild(metaTheme)
+        } else if (metaTheme && prevThemeContent) {
+          metaTheme.setAttribute("content", prevThemeContent)
+        }
+        blankIcon.parentNode?.removeChild(blankIcon)
+        for (const { el, parent } of prevIcons) {
+          parent?.appendChild(el)
+        }
+        if (tileMeta && prevTileContent !== null) {
+          tileMeta.setAttribute("content", prevTileContent)
+        }
+      }
     }
   }, [])
 
   return (
     <div
-      className="min-h-screen h-screen overflow-y-auto overflow-x-hidden bg-[#202124] py-24"
+      className="chrome-error-screen"
       style={{
-        /* <CHANGE> viewport-pinned + overscroll contained (kit standard 2026-09-25) */
         position: "fixed",
         inset: 0,
+        zIndex: 9999,
         overscrollBehavior: "none",
+        backgroundColor: "#202124",
+        colorScheme: "dark",
         fontFamily:
-          '"Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Roboto", sans-serif',
+          '"Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", Arial, sans-serif',
         WebkitFontSmoothing: "antialiased",
       }}
     >
-      <div className="flex flex-col justify-start items-center w-full max-w-2xl mx-auto text-[#9AA0A6] px-4 sm:px-0 md:pl-10">
-        <div className="w-full">
+      <div className="chrome-error-screen__container">
+        <div className="chrome-error-screen__content">
           <img
             src="/error-icon.png"
             alt="Site offline notice"
-            className="mb-8 h-[72px] w-[72px] shrink-0 [image-rendering:pixelated]"
+            className="chrome-error-screen__icon"
             width={72}
             height={72}
           />
 
-          <h1 className="font-semibold text-lg sm:text-xl md:text-2xl">
-            This site can&apos;t be reached
-          </h1>
-          <p className="mt-4 text-[15px]">
-            <b>{siteName}</b> took too long to respond.
+          <h1 style={{ fontFamily: "inherit" }}>This site can&apos;t be reached</h1>
+          <p className="chrome-error-screen__lead" style={{ fontFamily: "inherit" }}>
+            <b>{siteName}</b> refused to connect.
           </p>
 
-          <p className="mt-3">Try:</p>
+          <p className="chrome-error-screen__try">Try:</p>
 
-          <ul className="w-full text-sm lg:text-[15px] space-y-2 list-disc pl-4 sm:pl-10 mt-2">
-            <li role="button">Checking the connection Checking the connection</li>
-            <li className="text-[#8ABFF8]" role="button">
-              Checking the proxy, firewall, and DNS configuration
-            </li>
-            <li className="text-[#8ABFF8]" role="button">
-              Running Windows Network Diagnostics
-            </li>
+          <ul>
+            <li>Checking the connection</li>
+            {platform === "mobile" ? (
+              <li>Checking your mobile data or Wi-Fi settings</li>
+            ) : (
+              <>
+                <li>Checking the proxy, firewall, and DNS configuration</li>
+                {platform === "win" && <li>Running Windows Network Diagnostics</li>}
+                {platform === "mac" && <li>Running Network Diagnostics</li>}
+              </>
+            )}
           </ul>
 
-          <p className="text-xs mt-5">ERR_NAME_NOT_RESOLVED</p>
+          <p className="chrome-error-screen__code">{errorCode}</p>
 
-          <div className="flex justify-between items-center gap-4 w-full mt-14">
+          <div className="chrome-error-screen__actions">
             <button
+              id="details-button"
               type="button"
-              onClick={handleReload}
-              className="bg-[#8ABFF8] text-[#202124] rounded-full px-5 py-1.5 text-sm"
-            >
-              Reload
-            </button>
-            <button
-              type="button"
+              aria-expanded={checkNetworkOpen}
+              aria-controls="details"
               onClick={handleToggleCheckNetwork}
-              className="text-[#8ABFF8] border-[#80868b] hover:bg-[#303339] border rounded-full px-5 py-1.5 text-sm"
+              className="chrome-error-screen__details"
+              style={{ border: "1px solid #80868b" }}
             >
               {checkNetworkOpen ? "Hide Details" : "Details"}
+            </button>
+            <button
+              id="reload-button"
+              type="button"
+              onClick={handleReload}
+              className="chrome-error-screen__reload"
+            >
+              Reload
             </button>
           </div>
 
           {checkNetworkOpen ? (
-            <div className="mt-10 space-y-4 w-full">
-              <div>
-                <h2 className="font-semibold text-[16px]">Check your Internet connection</h2>
-                <p className="font-light">
+            <div id="details" className="chrome-error-screen__panel">
+              <section>
+                <h2>Check your Internet connection</h2>
+                <p>
                   Check any cables and reboot any routers, modems, or other network devices you may
                   be using.
                 </p>
-              </div>
+              </section>
 
-              <div>
-                <h2 className="font-semibold text-[16px]">
-                  Allow Chrome to access the network in your firewall or antivirus settings.
-                </h2>
-                <p className="font-light">
-                  If it is already listed as a program allowed to access the network, try removing it
-                  from the list and adding it again.
+              <section>
+                <h2>Allow Chrome to access the network in your firewall or antivirus settings.</h2>
+                <p>
+                  If it is already listed as a program allowed to access the network, try removing
+                  it from the list and adding it again.
                 </p>
-              </div>
+              </section>
 
-              <div>
-                <h2 className="font-semibold text-[16px]">If you use a proxy server…</h2>
-                <p className="font-light">
-                  Go to the Chrome menu {">"} Settings {">"} Show advanced settings… {">"}
-                  Change proxy settings… {">"} LAN Settings and deselect &apos;Use a proxy server for
-                  your LAN&apos;.
+              <section>
+                <h2>If you use a proxy server…</h2>
+                <p>
+                  {platform === "mobile"
+                    ? "Check your device network settings, active VPN connections, or mobile proxy configurations."
+                    : "Go to the Chrome menu > Settings > Show advanced settings… > Change proxy settings… > LAN Settings and deselect 'Use a proxy server for your LAN'."}
                 </p>
-              </div>
+              </section>
             </div>
           ) : null}
         </div>

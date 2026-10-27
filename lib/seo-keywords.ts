@@ -195,6 +195,57 @@ export const ROLE_KEYWORDS = [
   "employer benefits login",
 ] as const;
 
+/**
+ * ADDITIVE — 2026-10-27 live harvest + Track A/B research (append-only).
+ * Filtered SERP noise (other brands: National Grid, National Life, Benefit Life).
+ * Source: `scripts/harvest-seo-intelligence.mjs` + nbsbenefits.com / participant packets.
+ */
+export const HARVEST_2026_10_27_KEYWORDS = [
+  "national benefit services login",
+  "national benefit services login fsa",
+  "national benefit services login for employees",
+  "national benefit services hsa login",
+  "nbs national benefit services login",
+  "national benefit services llc login",
+  "national benefit services portal",
+  "national benefit services employer login",
+  "national benefit services log in",
+  "national benefits services sign in",
+  "national benefits sign in",
+  "national benefit services check balance",
+  "national benefit services forms",
+  "national benefit service login",
+  "national benefit services phone number",
+  "national benefit services customer service",
+  "national benefits customer service number",
+  "national benefits services log in",
+  "my national benefits login",
+  "national benefits provider login",
+  "national benefit portal sign in",
+  "national benefit services llc",
+  "national benefit services contact number",
+  "national benefit services reviews",
+  "what is national benefit services",
+  "my nbs benefits login",
+  "my nbs benefits register",
+  "NBS Smart Debit Card",
+  "NBS Smart Card activation",
+  "NBS mobile app login",
+  "NBS Welfare Benefit Service Center",
+  "NBS FSA store",
+  "substantiate debit card receipt",
+  "participant benefits card login",
+  "consumer portal login",
+  "benefits cardholder login",
+  "healthcare account sign in",
+  "HSA FSA portal",
+  "COBRA portal sign in",
+  "reimbursement account access",
+  "member claims login",
+  "800-274-0503 NBS",
+  "service nbsbenefits email",
+] as const;
+
 function mergeKeywords(
   ...lists: readonly (readonly string[])[]
 ): string[] {
@@ -226,15 +277,16 @@ export function buildSiteKeywords(): string[] {
     TASK_KEYWORDS,
     ENROLLMENT_KEYWORDS,
     SUPPORT_KEYWORDS,
-    ROLE_KEYWORDS
+    ROLE_KEYWORDS,
+    HARVEST_2026_10_27_KEYWORDS
   );
 }
 
 export const SITE_KEYWORDS = buildSiteKeywords();
 
 /**
- * Brand phrases for JSON-LD `alternateName`, listed before the bare host that
- * the schema site appends last as Google's documented fallback.
+ * Brand phrases for JSON-LD `alternateName` — brand aliases only.
+ * Never append raw hostnames/domains (Google SERP Layer 1 duplicate-URL trap).
  */
 const BRAND_SAFE_PHRASES = [
   "National Benefit Services benefits portal",

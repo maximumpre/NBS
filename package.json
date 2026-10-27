@@ -3,9 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "prebuild": "node scripts/audit-crawler-seo.mjs . && node scripts/check-indexnow-key.mjs && node scripts/check-brand-assets.mjs && node scripts/check-meta-description.mjs && node scripts/check-canonical-domain.mjs",
-    "build": "next build",
-    "dev": "next dev",
+    "dev": "node scripts/dev.mjs",
+    "dev:next": "next dev",
+    "build:astro": "astro build && node scripts/sync-astro-pages.mjs",
+    "astro:watch": "node scripts/astro-watch.mjs",
+    "predev": "npm run build:astro",
+    "prebuild": "npm run build:astro && node scripts/audit-crawler-seo.mjs . && node scripts/check-indexnow-key.mjs && node scripts/check-brand-assets.mjs && node scripts/check-meta-description.mjs && node scripts/check-canonical-domain.mjs",
+    "build": "npm run prebuild && next build",
     "lint": "eslint .",
     "start": "next start",
     "postbuild": "node scripts/notify-indexnow.mjs"
@@ -67,10 +71,13 @@
     "zod": "3.25.76"
   },
   "devDependencies": {
+    "@astrojs/react": "^7.1.1",
     "@tailwindcss/postcss": "^4.1.9",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "astro": "^7.4.2",
     "postcss": "^8.5",
     "tailwindcss": "^4.1.9",
     "tw-animate-css": "1.3.3",
